@@ -1,39 +1,71 @@
-var watchman = require("fb-watchman");
-var client = new watchman.Client();
-var subscriptionName = "VIRUSTOTALSUBSCRIPTION";
-require("dotenv").config();
-var apiKey = process.env.VIRUSTOTALAPIKEY;
+import { ServerResponse } from "http";
+
+// Require
+const watchman = require("fb-watchman");
+const fs = require("fs");
+const crypt = require("crypto");
+const request = require("request");
+
+// Load environment variables
+const dotenv = require("dotenv").config();
+if (dotenv.error) {
+	console.error(dotenv.error);
+	process.exit();
+}
+const subscriptionName = "VIRUSTOTALSUBSCRIPTION";
+
+// Check environment variables
+const apiKey = process.env.VIRUSTOTALAPIKEY;
 if (!apiKey) {
 	throw new Error("Api key not set in environment variable VIRUSTOTALAPIKEY.");
 }
-var dir_of_interest = process.env.DIRECTORYOFINTEREST;
+
+const dir_of_interest = process.env.DIRECTORYOFINTEREST;
 if (!dir_of_interest) {
 	throw new Error(
 		"Directory not set in environment variable DIRECTORYOFINTEREST."
 	);
 }
-var timeout = Number(process.env.VIRUSTOTALTIMEOUT);
+
+let timeout = Number(process.env.VIRUSTOTALTIMEOUT);
 if (!timeout) {
 	throw new Error("Timeout not set in environment variable VIRUSTOTALTIMEOUT.");
 }
-if (!timeout < 1) {
+if (timeout < 1) {
 	console.warn("Timeout should be at least 1 second.");
 }
-var http = require("https");
-var fs = require("fs");
+// convert to minutes
+timeout = timeout * 60000;
+
+// Create and use Watchman client
+const client = new watchman.Client();
+
+// Create cleanup hooks
+function onExit(type: string) {
+	client.command(["watch-del", dir_of_interest]);
+	client.command(['unsubscribe', dir_of_interest, subscriptionName]);
+	console.log(type);
+	process.exit();
+}
+
+process.on('exit', () => onExit('exit'));
+process.on('uncaughtException', () => onExit('uncaughtException'));
+process.on('SIGINT', () => onExit('SIGINT'));
+process.on('SIGUSR1', () => onExit('SIGUSR1'));
+process.on('SIGUSR2', () => onExit('SIGUSR2'));
 
 client.capabilityCheck({
 		optional: [],
 		required: ["relative_root"]
 	},
-	(error, resp) => {
+	(error: Error, resp: Response) => {
 		if (error) {
 			console.log(error);
 			client.end();
 			return;
 		}
 
-		client.command(["watch-project", dir_of_interest], (error, resp) => {
+		client.command(["watch-project", dir_of_interest], (error: Error, resp: any) => {
 			if (error) {
 				console.error("Error initiating watch:", error);
 				return;
@@ -57,17 +89,18 @@ client.capabilityCheck({
 );
 
 
-function make_time_constrained_subscription(client, watch, relative_path) {
-	client.command(["clock", watch], (error, resp) => {
+function make_time_constrained_subscription(client: any, watch: any, relative_path: any) {
+	client.command(["clock", watch], (error: Error, resp: any) => {
 		if (error) {
 			console.error("Failed to query clock:", error);
 			return;
 		}
 
-		sub = {
+		const sub = {
 			expression: ["allof", ["match", "*.*"]],
 			fields: ["exists", "name", "type", "new"],
-			since: resp.clock
+			since: resp.clock,
+			relative_root: ""
 		};
 
 		if (relative_path) {
@@ -76,7 +109,7 @@ function make_time_constrained_subscription(client, watch, relative_path) {
 
 		client.command(
 			["subscribe", watch, subscriptionName, sub],
-			(error, resp) => {
+			(error: Error, resp: any) => {
 				if (error) {
 					console.error("failed to subscribe: ", error);
 					return;
@@ -85,18 +118,17 @@ function make_time_constrained_subscription(client, watch, relative_path) {
 			}
 		);
 
-		client.on("subscription", resp => {
+		client.on("subscription", (resp: any) => {
 			if (resp.subscription !== subscriptionName) return;
 
-			resp.files.forEach(file => {
+			resp.files.forEach((file: any) => {
 				if (file.exists && file.new) {
-					var crypto = require("crypto");
 					var algorithm = "sha256";
-					var shasum = crypto.createHash(algorithm);
+					var shasum = crypt.createHash(algorithm);
 
 					const fullname = dir_of_interest + "/" + file.name;
 					var stream = fs.ReadStream(fullname);
-					stream.on("data", data => {
+					stream.on("data", (data: any) => {
 						shasum.update(data);
 					});
 
@@ -110,28 +142,20 @@ function make_time_constrained_subscription(client, watch, relative_path) {
 	});
 }
 
-function scan(hash, fileName) {
-	var url =
-		"https://www.virustotal.com/vtapi/v2/file/report?apikey=" +
-		apiKey +
-		"&resource=" +
-		hash;
-	http.get(url, response => {
-		response.setEncoding("utf8");
-		let body = "";
-		response.on("data", data => {
-			checkStatus(response);
-			body += data;
-		});
-		response.on("end", () => {
-			checkStatus(response);
-			body = JSON.parse(body);
+function scan(hash: string, fileName: string) {
+	const url = "https://www.virustotal.com/vtapi/v2/file/report?apikey=" + apiKey + "&resource=" + hash;
+	request.get(url, (err: Error, response: any) => {
+		if (err) {
+			console.error(err);
+		}
+		checkStatus(response, () => {
+			const body = JSON.parse(response.body);
 			checkResponseCode(hash, body, fileName);
 		});
 	});
 }
 
-function checkResponseCode(hash, body, fileName) {
+function checkResponseCode(hash: string, body: any, fileName: string) {
 	switch (body.response_code) {
 		case 1:
 			console.log("Item present");
@@ -154,11 +178,10 @@ function checkResponseCode(hash, body, fileName) {
 	}
 }
 
-function scanFirstTime(hash, fileName) {
-	var fileStream = fs.createReadStream(fileName);
-	var url = "https://www.virustotal.com/vtapi/v2/file/scan";
-	var request = require("request");
-	var formData = {
+function scanFirstTime(hash: string, fileName: string) {
+	const fileStream = fs.createReadStream(fileName);
+	const url = "https://www.virustotal.com/vtapi/v2/file/scan";
+	const formData = {
 		apikey: apiKey,
 		file: fs.createReadStream(fileName)
 	};
@@ -166,23 +189,23 @@ function scanFirstTime(hash, fileName) {
 			url: url,
 			formData: formData
 		},
-		function optionalCallback(err, response, body) {
+		function optionalCallback(err: Error, response: Response, body: string) {
 			if (err) {
 				return console.error("upload failed:", err);
 			}
 			body = JSON.parse(body);
 			console.log("Upload successful!  Server responded with");
-			checkStatus(response);
-			checkResponseCode(hash, body, fileName);
+			checkStatus(response, () => checkResponseCode(hash, body, fileName));
 		}
 	);
 }
 
-function checkStatus(response) {
+function checkStatus(response: any, callback: Function) {
 	if (response.statusCode === 204) {
 		console.log(
 			"Request rate limit exceeded. You are making more requests than allowed."
 		);
+		setTimeout(callback, timeout);
 	}
 	if (response.statusCode === 400) {
 		console.log(
@@ -195,16 +218,3 @@ function checkStatus(response) {
 		);
 	}
 }
-
-function onExit(type) {
-	client.command(["watch-del", dir_of_interest]);
-	client.command(['unsubscribe', dir_of_interest, subscriptionName]);
-	console.log(type);
-	process.exit();
-}
-
-process.on('exit', () => onExit('exit'));
-process.on('uncaughtException', () => onExit('uncaughtException'));
-process.on('SIGINT', () => onExit('SIGINT'));
-process.on('SIGUSR1', () => onExit('SIGUSR1'));
-process.on('SIGUSR2', () => onExit('SIGUSR2'));

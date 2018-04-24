@@ -11,6 +11,10 @@
   "dependencies": {
     "dotenv": "^5.0.1",
     "fb-watchman": "^2.0.0",
-    "request": "^2.85.0"
+    "request": "^2.85.0",
+    "typescript": "^2.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^9.6.6"
   }
 }
