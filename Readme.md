@@ -1,3 +1,6 @@
+# STRESS
+Scan waTched diRectoriEs uSing viruStotal
+
 ## Example ".env" configuration:
 
 VIRUSTOTALAPIKEY=Your API Key
