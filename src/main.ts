@@ -1,5 +1,3 @@
-import { ServerResponse } from "http";
-
 // Require
 const watchman = require("fb-watchman");
 const fs = require("fs");
@@ -59,7 +57,7 @@ client.capabilityCheck(
     optional: [],
     required: ["relative_root"]
   },
-  (error: Error, resp: Response) => {
+  (error: Error) => {
     if (error) {
       console.log(error);
       client.end();
@@ -194,7 +192,6 @@ function checkResponseCode(options: {
 
 // Scan if file did not exist already
 function scanFirstTime(hash: string, fileName: string) {
-  const fileStream = fs.createReadStream(fileName);
   const url = "https://www.virustotal.com/vtapi/v2/file/scan";
   const formData = {
     apikey: apiKey,
@@ -213,7 +210,7 @@ function scanFirstTime(hash: string, fileName: string) {
       console.log("Upload successful!  Server responded with");
 
       checkStatus(response);
-      waitForRateLimit(response, checkResponseCode, {hash, body, fileName});
+      waitForRateLimit(response, checkResponseCode, { hash, body, fileName });
     }
   );
 }
