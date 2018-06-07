@@ -8,6 +8,7 @@
 			"type": "node",
 			"request": "launch",
 			"name": "Launch Program",
+			"preLaunchTask": "build",
 			"program": "${workspaceFolder}/lib/main.js"
 		}
 	]

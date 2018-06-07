@@ -1,8 +1,8 @@
 // Require
-const watchman = require("fb-watchman");
-const fs = require("fs");
-const crypt = require("crypto");
-const request = require("request");
+import * as watchman from "fb-watchman";
+import * as fs from "fs";
+import * as crypt from "crypto";
+import * as request from "request";
 
 // Load environment variables
 const dotenv = require("dotenv").config();
@@ -40,8 +40,8 @@ const client = new watchman.Client();
 
 // Create cleanup hooks
 function onExit(type: string) {
-  client.command(["watch-del", dir_of_interest]);
-  client.command(["unsubscribe", dir_of_interest, subscriptionName]);
+  client.command(["watch-del", dir_of_interest], () => {});
+  client.command(["unsubscribe", dir_of_interest, subscriptionName], () => {});
   console.log(type);
   process.exit();
 }
@@ -57,7 +57,7 @@ client.capabilityCheck(
     optional: [],
     required: ["relative_root"]
   },
-  (error: Error) => {
+  (error: Error | null | undefined) => {
     if (error) {
       console.log(error);
       client.end();
@@ -66,7 +66,7 @@ client.capabilityCheck(
 
     client.command(
       ["watch-project", dir_of_interest],
-      (error: Error, resp: any) => {
+      (error: Error | null | undefined, resp: any) => {
         if (error) {
           console.error("Error initiating watch:", error);
           return;
@@ -87,11 +87,11 @@ client.capabilityCheck(
 );
 
 function makeTimeConstrainedSubscription(
-  client: any,
+  client: watchman.Client,
   watch: any,
-  relative_path: any
+  relative_path: string | null | undefined
 ) {
-  client.command(["clock", watch], (error: Error, resp: any) => {
+  client.command(["clock", watch], (error: Error | null | undefined, resp: any) => {
     if (error) {
       console.error("Failed to query clock:", error);
       return;
@@ -110,7 +110,7 @@ function makeTimeConstrainedSubscription(
 
     client.command(
       ["subscribe", watch, subscriptionName, sub],
-      (error: Error, resp: any) => {
+      (error: Error | null | undefined, resp: any) => {
         if (error) {
           console.error("failed to subscribe: ", error);
           return;
@@ -128,7 +128,7 @@ function makeTimeConstrainedSubscription(
           var shasum = crypt.createHash(algorithm);
 
           const fullname = dir_of_interest + "/" + file.name;
-          var stream = fs.ReadStream(fullname);
+          var stream = fs.createReadStream(fullname);
           stream.on("data", (data: any) => {
             shasum.update(data);
           });
