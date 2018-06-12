@@ -1,7 +1,11 @@
 {
 	"name": "stress-watch",
-	"version": "1.0.1",
-	"description": "",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/xamm/STRESS.git"
+	},
+	"version": "0.0.0",
+	"description": "Watches a folder for file changes and checks new files with VirusTotal.",
 	"main": "lib/main.js",
 	"types": "./lib/main.d.ts",
 	"scripts": {
