@@ -1,10 +1,12 @@
 # STRESS
 Scan waTched diRectoriEs uSing viruStotal
 
-## Example ".env" configuration:
+## To use this program you have to add these keys to your terminal profile:
 
-VIRUSTOTALAPIKEY=Your API Key
+#stress-watch
 
-DIRECTORYOFINTEREST=The folder to watch
+export VIRUSTOTALAPIKEY=Your API Key
 
-VIRUSTOTALTIMEOUT=Timeout for when new requests should be executed
+export DIRECTORYOFINTEREST=The folder to watch
+
+export VIRUSTOTALTIMEOUT=Timeout for when new requests should be executed

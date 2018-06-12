@@ -1,14 +1,19 @@
 {
-	"name": "checkdownloads",
+	"name": "stress-watch",
 	"version": "1.0.0",
 	"description": "",
-	"main": "index.js",
+	"main": "lib/main.js",
+	"types": "./lib/main.d.ts",
 	"scripts": {
 		"build": "tsc",
 		"start": "tsc && node lib/main.js"
 	},
-	"author": "",
-	"license": "ISC",
+	"bin": {
+		"stress-watch": "./lib/stress-watch.js"
+	},
+	"preferGlobal": true,
+	"author": "xamm",
+	"license": "MIT",
 	"dependencies": {
 		"dotenv": "^5.0.1",
 		"fb-watchman": "^2.0.0",
