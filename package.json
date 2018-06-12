@@ -1,6 +1,6 @@
 {
 	"name": "stress-watch",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "",
 	"main": "lib/main.js",
 	"types": "./lib/main.d.ts",
@@ -15,14 +15,13 @@
 	"author": "xamm",
 	"license": "MIT",
 	"dependencies": {
-		"dotenv": "^5.0.1",
 		"fb-watchman": "^2.0.0",
-		"request": "^2.85.0",
-		"typescript": "^2.8.3"
+		"request": "^2.85.0"
 	},
 	"devDependencies": {
 		"@types/fb-watchman": "^2.0.0",
 		"@types/node": "^10.1.4",
-		"@types/request": "^2.47.0"
+		"@types/request": "^2.47.0",
+		"typescript": "^2.9.1"
 	}
 }
