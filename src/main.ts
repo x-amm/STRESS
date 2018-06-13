@@ -28,12 +28,11 @@ export default function startWatch() {
     );
   }
   if (timeout < 1) {
-    console.warn("Timeout should be at least 1 second.");
+    console.warn("Timeout should be at least 1 minute.");
   }
   // convert to minutes
   timeout = timeout * 60000;
 
-  // Create and use Watchman client
   const client = new watchman.Client();
 
   // Create cleanup hooks
@@ -243,12 +242,12 @@ export default function startWatch() {
     }
     if (response.statusCode === 400) {
       console.log(
-        "Bad request.Your request was somehow incorrect.This can be caused by missing arguments or arguments with wrong values."
+        "Bad request. Your request was somehow incorrect. This can be caused by missing arguments or arguments with wrong values."
       );
     }
     if (response.statusCode === 403) {
       console.log(
-        "Forbidden.You don 't have enough privileges to make the request. You may be doing a request without providing an API key or you may be making a request to a Private API without having the appropriate privileges."
+        "Forbidden. You don't have enough privileges to make the request. You may be doing a request without providing an API key or you may be making a request to a Private API without having the appropriate privileges."
       );
     }
   }
